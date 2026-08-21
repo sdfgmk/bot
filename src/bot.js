@@ -183,8 +183,8 @@ async function notifyAdminsNewReceipt(orderId) {
 
 bot.hears("🛠 پنل ادمین", async (ctx) => {
   if (!db.isAdmin(ctx.from.id)) return;
-  const plans = db.listPlans();
-  const pending = db.listPendingOrders();
+  const plans = await db.listPlans();
+  const pending = await db.listPendingOrders();
   await ctx.reply(
     `🛠 پنل ادمین\n\nپلن‌های فعال: ${plans.length}\nسفارش‌های در انتظار بررسی: ${pending.length}\n\n` +
       `دستورات:\n/newplan برای ساخت پلن جدید\n/plans برای دیدن لیست پلن‌ها\n/pending برای دیدن سفارش‌های در انتظار`
@@ -193,7 +193,7 @@ bot.hears("🛠 پنل ادمین", async (ctx) => {
 
 bot.command("plans", async (ctx) => {
   if (!db.isAdmin(ctx.from.id)) return;
-  const plans = db.listPlans();
+  const plans = await db.listPlans(false);
   if (!plans.length) return ctx.reply("هیچ پلنی نیست.");
   const lines = plans.map(
     (p) => `#${p.id} — ${p.name} — ${p.gb}GB / ${p.days}روز / ${p.ip_limit}کاربر — ${p.price.toLocaleString("fa-IR")} تومان`
@@ -203,23 +203,39 @@ bot.command("plans", async (ctx) => {
 
 bot.command("newplan", async (ctx) => {
   if (!db.isAdmin(ctx.from.id)) return;
-  setState(ctx.from.id, "admin_newplan");
-  await ctx.reply(
-    "اطلاعات پلن رو با کاما بفرست:\nنام,حجم(GB),روز,تعداد کاربر,قیمت(تومان)\n\nمثال:\n۱ ماهه ۲۰ گیگ,20,30,2,150000"
-  );
+  setState(ctx.from.id, "admin_newplan_step", {step:1});
+  await ctx.reply("🏷 نام پلن را بفرست:");
 });
 
 async function handleNewPlanInput(ctx) {
-  try {
-    const parts = ctx.message.text.split(",").map((p) => p.trim());
-    const [name, gb, days, ipLimit, price] = parts;
-    db.addPlan(name, parseFloat(gb), parseInt(days, 10), parseInt(ipLimit, 10), parseInt(price, 10));
+  const st = getState(ctx.from.id);
+  const v = ctx.message.text.trim();
+  const data = st.data || {};
+  if (st.step !== "admin_newplan_step") return;
+
+  if (data.step === 1) { setState(ctx.from.id,"admin_newplan_step",{step:2,name:v}); return ctx.reply("📦 چند گیگ؟"); }
+  if (data.step === 2) { setState(ctx.from.id,"admin_newplan_step",{...data,step:3,gb:Number(v)}); return ctx.reply("📅 چند روز؟"); }
+  if (data.step === 3) { setState(ctx.from.id,"admin_newplan_step",{...data,step:4,days:Number(v)}); return ctx.reply("👥 چند کاربر؟"); }
+  if (data.step === 4) { setState(ctx.from.id,"admin_newplan_step",{...data,step:5,ipLimit:Number(v)}); return ctx.reply("💰 قیمت؟"); }
+  if (data.step === 5) {
+    await db.addPlan(data.name,data.gb,data.days,data.ipLimit,Number(v));
     clearState(ctx.from.id);
-    await ctx.reply(`✅ پلن «${name}» ساخته شد.`);
-  } catch (e) {
-    await ctx.reply("فرمت درست نیست. دوباره امتحان کن یا /newplan رو دوباره بزن.");
+    return ctx.reply(`✅ پلن ${data.name} ساخته شد.`);
   }
 }
+
+
+bot.command("delplan", async (ctx) => {
+  if (!db.isAdmin(ctx.from.id)) return;
+  await db.hardDeletePlan(Number(ctx.message.text.split(" ")[1]));
+  ctx.reply("🗑 پلن کامل حذف شد.");
+});
+
+bot.command("toggleplan", async (ctx) => {
+  if (!db.isAdmin(ctx.from.id)) return;
+  await db.togglePlan(Number(ctx.message.text.split(" ")[1]));
+  ctx.reply("👁 وضعیت پلن تغییر کرد.");
+});
 
 bot.command("pending", async (ctx) => {
   if (!db.isAdmin(ctx.from.id)) return;

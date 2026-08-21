@@ -293,6 +293,29 @@ async function seed() {
   }
 }
 
+async function hardDeletePlan(id) {
+  const database = await connectDB();
+  await database.collection("plans").deleteOne({ id: Number(id) });
+}
+
+async function updatePlan(id, data) {
+  const database = await connectDB();
+  await database.collection("plans").updateOne(
+    { id: Number(id) },
+    { $set: data }
+  );
+}
+
+async function togglePlan(id) {
+  const database = await connectDB();
+  const plan = await database.collection("plans").findOne({ id: Number(id) });
+  if (!plan) return;
+  await database.collection("plans").updateOne(
+    { id: Number(id) },
+    { $set: { active: plan.active ? 0 : 1 } }
+  );
+}
+
 module.exports = {
   connectDB,
   seed,
@@ -304,6 +327,9 @@ module.exports = {
   getPlan,
   addPlan,
   deletePlan,
+  hardDeletePlan,
+  updatePlan,
+  togglePlan,
   createOrder,
   attachReceipt,
   getOrder,
