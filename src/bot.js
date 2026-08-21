@@ -127,14 +127,9 @@ bot.on("text", async (ctx, next) => {
     return handleReceipt(ctx, st, null, ctx.message.text.trim().slice(0, 300));
   }
 
-if (
-  st.step === "admin_plan_days" ||
-  st.step === "admin_plan_gb" ||
-  st.step === "admin_plan_users" ||
-  st.step === "admin_plan_price"
-) {
-  return handleNewPlanInput(ctx, st);
-}
+  if (st.step === "admin_newplan") {
+    return handleNewPlanInput(ctx);
+  }
 
   return next();
 });
@@ -208,97 +203,21 @@ bot.command("plans", async (ctx) => {
 
 bot.command("newplan", async (ctx) => {
   if (!db.isAdmin(ctx.from.id)) return;
-
-  setState(ctx.from.id, "admin_plan_days", {});
-
+  setState(ctx.from.id, "admin_newplan");
   await ctx.reply(
-    "📅 چند روزه باشد؟\n\nمثال:\n30"
+    "اطلاعات پلن رو با کاما بفرست:\nنام,حجم(GB),روز,تعداد کاربر,قیمت(تومان)\n\nمثال:\n۱ ماهه ۲۰ گیگ,20,30,2,150000"
   );
 });
 
-async function handleNewPlanInput(ctx, st) {
-
-  const value = ctx.message.text.trim();
-
-
-  if (st.step === "admin_plan_days") {
-
-    const days = Number(value);
-
-    if (!days)
-      return ctx.reply("❌ تعداد روز اشتباه است.");
-
-    setState(ctx.from.id, "admin_plan_gb", {
-      days
-    });
-
-    return ctx.reply("📦 چند گیگ باشد؟");
-  }
-
-
-  if (st.step === "admin_plan_gb") {
-
-    const gb = Number(value);
-
-    if (!gb)
-      return ctx.reply("❌ حجم اشتباه است.");
-
-    setState(ctx.from.id, "admin_plan_users", {
-      ...st.data,
-      gb
-    });
-
-    return ctx.reply("👥 چند کاربره باشد؟");
-  }
-
-
-  if (st.step === "admin_plan_users") {
-
-    const users = Number(value);
-
-    if (!users)
-      return ctx.reply("❌ تعداد کاربر اشتباه است.");
-
-    setState(ctx.from.id, "admin_plan_price", {
-      ...st.data,
-      users
-    });
-
-    return ctx.reply("💰 قیمت چند تومان باشد؟");
-  }
-
-
-  if (st.step === "admin_plan_price") {
-
-    const price = Number(value);
-
-    if (isNaN(price))
-      return ctx.reply("❌ قیمت اشتباه است.");
-
-
-    const name =
-      `${st.data.days} روز - ${st.data.gb} گیگ - ${st.data.users} کاربر`;
-
-
-    db.addPlan(
-      name,
-      st.data.gb,
-      st.data.days,
-      st.data.users,
-      price
-    );
-
-
+async function handleNewPlanInput(ctx) {
+  try {
+    const parts = ctx.message.text.split(",").map((p) => p.trim());
+    const [name, gb, days, ipLimit, price] = parts;
+    db.addPlan(name, parseFloat(gb), parseInt(days, 10), parseInt(ipLimit, 10), parseInt(price, 10));
     clearState(ctx.from.id);
-
-
-    return ctx.reply(
-      `✅ پلن ساخته شد\n\n` +
-      `📦 حجم: ${st.data.gb}GB\n` +
-      `📅 مدت: ${st.data.days} روز\n` +
-      `👥 کاربر: ${st.data.users}\n` +
-      `💰 قیمت: ${price.toLocaleString("fa-IR")} تومان`
-    );
+    await ctx.reply(`✅ پلن «${name}» ساخته شد.`);
+  } catch (e) {
+    await ctx.reply("فرمت درست نیست. دوباره امتحان کن یا /newplan رو دوباره بزن.");
   }
 }
 
