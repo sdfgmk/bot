@@ -127,9 +127,9 @@ bot.on("text", async (ctx, next) => {
     return handleReceipt(ctx, st, null, ctx.message.text.trim().slice(0, 300));
   }
 
-  if (st.step === "admin_newplan") {
-    return handleNewPlanInput(ctx);
-  }
+ if (st.step === "admin_newplan_step") {
+  return handleNewPlanInput(ctx);
+}
 
   return next();
 });
