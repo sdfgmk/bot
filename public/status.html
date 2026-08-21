@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>وضعیت سرویس</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect } = React;
+
+    function useServiceStatus(uid) {
+      const [state, setState] = useState({ loading: true, error: null, data: null });
+
+      useEffect(() => {
+        if (!uid) {
+          setState({ loading: false, error: "شناسه سرویس پیدا نشد.", data: null });
+          return;
+        }
+        fetch(`/api/status/${uid}`)
+          .then((res) => {
+            if (!res.ok) throw new Error("bad response");
+            return res.json();
+          })
+          .then((data) => setState({ loading: false, error: null, data }))
+          .catch(() => setState({ loading: false, error: "خطا در دریافت اطلاعات. بعداً دوباره امتحان کن.", data: null }));
+      }, [uid]);
+
+      return state;
+    }
+
+    function UsageRing({ percent, unlimited }) {
+      const r = 54;
+      const c = 2 * Math.PI * r;
+      const p = unlimited ? 8 : Math.max(0, Math.min(100, percent ?? 0));
+      const offset = c - (p / 100) * c;
+      return (
+        <div className="ring-wrap">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle className="ring-bg" cx="70" cy="70" r={r} />
+            <circle
+              className="ring-fg"
+              cx="70" cy="70" r={r}
+              strokeDasharray={c}
+              strokeDashoffset={offset}
+            />
+            <text x="70" y="70" className="ring-center ring-percent">
+              {unlimited ? "∞" : `${percent}%`}
+            </text>
+          </svg>
+        </div>
+      );
+    }
+
+    function StatusApp() {
+      const params = new URLSearchParams(window.location.search);
+      const tg = window.Telegram && window.Telegram.WebApp;
+      const uid = params.get("uid") || (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || "";
+
+      useEffect(() => {
+        if (tg) { tg.ready(); tg.expand(); }
+      }, []);
+
+      const { loading, error, data } = useServiceStatus(uid);
+
+      if (loading) return <div className="center-msg">در حال دریافت وضعیت سرویس...</div>;
+      if (error) return <div className="center-msg error">{error}</div>;
+
+      const unlimited = !(data.limit_bytes > 0);
+      const statusOk = data.allowed;
+
+      return (
+        <div className="page">
+          <div className="title">{data.label || "سرویس شما"}</div>
+          <div className="subtitle">{statusOk ? "فعال و در حال کار ✅" : "غیرفعال یا منقضی‌شده ⛔️"}</div>
+
+          <div className="card">
+            <UsageRing percent={data.percent_used} unlimited={unlimited} />
+            <Row label="حجم مصرف‌شده" value={data.used_fmt} />
+            <Row label="حجم باقی‌مانده" value={data.remaining_fmt} />
+            <Row label="سقف مصرف" value={data.limit_fmt} />
+          </div>
+
+          <div className="card">
+            <div className="days-big">{data.days_left ?? "∞"}</div>
+            <div className="days-label">روز تا پایان اعتبار</div>
+            <Row
+              label="وضعیت"
+              value={<span className={`badge ${statusOk ? "ok" : "warn"}`}>{statusOk ? "فعال" : "غیرفعال"}</span>}
+            />
+            <Row label="تعداد کاربر مجاز" value={data.ip_limit || "نامحدود"} />
+            <Row label="کاربران متصل هم‌اکنون" value={data.connected_ips} />
+          </div>
+        </div>
+      );
+    }
+
+    function Row({ label, value }) {
+      return (
+        <div className="row">
+          <span className="label">{label}</span>
+          <span className="value">{value}</span>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<StatusApp />);
+  </script>
+</body>
+</html>
