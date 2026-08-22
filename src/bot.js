@@ -582,54 +582,78 @@ bot.action(/^approve:(\d+)$/, async (ctx) => {
     console.log("APPROVE CLICK:", orderId);
 
 
+
+    // چک ادمین
+
     const admin = await db.isAdmin(ctx.from.id);
 
     if (!admin) {
+
       return ctx.answerCbQuery(
         "⛔ دسترسی ندارید",
         {
           show_alert:true
         }
       );
+
     }
 
+
+
+
+    // گرفتن سفارش
 
     const order = await db.getOrder(orderId);
 
 
     if (!order) {
+
       return ctx.answerCbQuery(
         "سفارش پیدا نشد",
         {
           show_alert:true
         }
       );
+
     }
 
 
+
+
+    // گرفتن پلن
 
     const plan = await db.getPlan(order.plan_id);
 
 
     if (!plan) {
+
       return ctx.answerCbQuery(
         "پلن پیدا نشد",
         {
           show_alert:true
         }
       );
+
     }
+
+
 
 
 
     // ساخت کانفیگ X4G
 
-    const x4gConfig = await x4g.createConfig(
+    const x4gConfig = await x4g.createFullService(
+
       order.custom_name,
+
       plan.gb,
+
       plan.days,
+
       plan.ip_limit
+
     );
+
 
 
     console.log(
@@ -639,55 +663,113 @@ bot.action(/^approve:(\d+)$/, async (ctx) => {
 
 
 
-    // ذخیره UUID و فعال کردن سفارش
+
+
+    // ذخیره اطلاعات کانفیگ
 
     await db.setOrderConfig(
+
       orderId,
+
       x4gConfig.uuid,
-      x4gConfig.vless_link || x4gConfig.config || x4gConfig.url || null,
-      x4gConfig.sub_url || x4gConfig.subscription_url || null
+
+      x4gConfig.vless_link ||
+      x4gConfig.config ||
+      x4gConfig.url ||
+      null,
+
+      x4gConfig.sub_url ||
+      x4gConfig.subscription_url ||
+      null
+
     );
 
 
-// ارسال لینک اشتراک یا کانفیگ برای مشتری
-
-const sub =
-  x4gConfig.sub_url ||
-  x4gConfig.subscription_url ||
-  null;
-
-const vless =
-  x4gConfig.vless_link ||
-  x4gConfig.config ||
-  x4gConfig.url ||
-  "کانفیگ ساخته شد";
-
-await bot.telegram.sendMessage(
-  order.telegram_id,
-  sub
-    ? `✅ سرویس شما فعال شد\n\n📦 نام سرویس:\n${order.custom_name}\n\n🔗 لینک اشتراک:\n\n${sub}\n\nاز این لینک برای برنامه V2Ray استفاده کنید.`
-    : `✅ سفارش شما تایید شد.\n\n📦 سرویس: ${order.custom_name}\n\n📋 کانفیگ سرویس:\n\n\`${vless}\``,
-  {
-    parse_mode: "Markdown"
-  }
-);
 
 
-// تغییر پیام ادمین
+
+
+
+    // لینک کانفیگ
+
+    const vless =
+
+      x4gConfig.sub_url ||
+      x4gConfig.subscription_url ||
+      x4gConfig.vless_link ||
+      x4gConfig.config ||
+      x4gConfig.url ||
+
+      "کانفیگ ساخته شد";
+
+
+
+
+
+
+    // ارسال برای مشتری
+
+
+    await bot.telegram.sendMessage(
+
+      order.telegram_id,
+
+
+`✅ سرویس شما فعال شد
+
+
+📦 نام سرویس:
+${order.custom_name}
+
+
+📋 کانفیگ سرویس:
+
+
+\`${vless}\`
+
+
+روی متن بالا نگه دار و کپی کن ✅`,
+
+
+{
+  parse_mode:"Markdown"
+}
+
+    );
+
+
+
+
+
+
+    // تغییر پیام ادمین
+
 
     try {
 
       await ctx.editMessageCaption(
-        `✅ تایید شد\n\n🧾 سفارش #${orderId}`
+
+`✅ تایید شد
+
+🧾 سفارش #${orderId}`
+
       );
+
 
     } catch {
 
+
       try {
 
+
         await ctx.editMessageText(
-          `✅ تایید شد\n\n🧾 سفارش #${orderId}`
+
+`✅ تایید شد
+
+🧾 سفارش #${orderId}`
+
         );
+
 
       } catch {}
 
@@ -695,9 +777,17 @@ await bot.telegram.sendMessage(
 
 
 
+
+
+
+
     await ctx.answerCbQuery(
+
       "تایید شد ✅"
+
     );
+
+
 
 
   } catch(err) {
@@ -705,15 +795,19 @@ await bot.telegram.sendMessage(
 
     console.log(
       "APPROVE ERROR:",
-      err
+      err.response?.data || err.message
     );
 
 
+
     await ctx.answerCbQuery(
+
       "خطا در تایید سفارش",
+
       {
         show_alert:true
       }
+
     );
 
   }
