@@ -199,6 +199,7 @@ async function createOrder(
     renew_of_order_id: renewOfOrderId,
     x4g_uuid: null,
     vless_link: null,
+    sub_url: null,
     receipt_file_id: null,
     receipt_text: null,
     created_at: new Date().toISOString(),
@@ -247,7 +248,7 @@ async function setOrderStatus(orderId, status, uuid = null) {
   );
 }
 
-async function setOrderConfig(orderId, uuid, vlessLink = null) {
+async function setOrderConfig(orderId, uuid, vlessLink = null, subUrl = null) {
   const database = await connectDB();
 
   await database.collection("orders").updateOne(
@@ -256,6 +257,7 @@ async function setOrderConfig(orderId, uuid, vlessLink = null) {
       $set: {
         x4g_uuid: uuid,
         vless_link: vlessLink,
+        sub_url: subUrl,
         status: "active",
         approved_at: new Date().toISOString()
       }

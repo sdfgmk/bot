@@ -643,29 +643,37 @@ bot.action(/^approve:(\d+)$/, async (ctx) => {
 
     await db.setOrderConfig(
       orderId,
-      x4gConfig.uuid
+      x4gConfig.uuid,
+      x4gConfig.vless_link || x4gConfig.config || x4gConfig.url || null,
+      x4gConfig.sub_url || x4gConfig.subscription_url || null
     );
 
 
+// ارسال لینک اشتراک یا کانفیگ برای مشتری
 
-    // ارسال کانفیگ برای مشتری
+const sub =
+  x4gConfig.sub_url ||
+  x4gConfig.subscription_url ||
+  null;
 
-    await bot.telegram.sendMessage(
-      order.telegram_id,
-      `✅ سفارش شما تایید شد.\n\n` +
-      `📦 سرویس: ${order.custom_name}\n\n` +
-      `🔗 کانفیگ شما:\n\n` +
-      `${
-        x4gConfig.vless_link ||
-        x4gConfig.config ||
-        x4gConfig.url ||
-        "کانفیگ ساخته شد"
-      }`
-    );
+const vless =
+  x4gConfig.vless_link ||
+  x4gConfig.config ||
+  x4gConfig.url ||
+  "کانفیگ ساخته شد";
+
+await bot.telegram.sendMessage(
+  order.telegram_id,
+  sub
+    ? `✅ سرویس شما فعال شد\n\n📦 نام سرویس:\n${order.custom_name}\n\n🔗 لینک اشتراک:\n\n${sub}\n\nاز این لینک برای برنامه V2Ray استفاده کنید.`
+    : `✅ سفارش شما تایید شد.\n\n📦 سرویس: ${order.custom_name}\n\n📋 کانفیگ سرویس:\n\n\`${vless}\``,
+  {
+    parse_mode: "Markdown"
+  }
+);
 
 
-
-    // تغییر پیام ادمین
+// تغییر پیام ادمین
 
     try {
 
