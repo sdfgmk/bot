@@ -389,6 +389,24 @@ async function setOrderStatus(
 }
 
 
+async function setOrderConfig(orderId, uuid){
+
+  const database = await connectDB();
+
+  await database.collection("orders")
+  .updateOne(
+    {
+      id:Number(orderId)
+    },
+    {
+      $set:{
+        x4g_uuid:uuid
+      }
+    }
+  );
+
+}
+
 
 async function listUserActiveOrders(id){
 
@@ -528,6 +546,8 @@ approveOrder,
 rejectOrder,
 
 listUserActiveOrders,
-listPendingOrders
+listPendingOrders,
+
+setOrderConfig
 
 };

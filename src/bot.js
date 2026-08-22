@@ -604,6 +604,55 @@ bot.action(/^approve:(\d+)$/, async (ctx) => {
     await db.approveOrder(orderId);
 
 
+// ساخت کانفیگ X4G
+try {
+
+  const plan = await db.getPlan(order.plan_id);
+
+  if (!plan) {
+    throw new Error("PLAN_NOT_FOUND");
+  }
+
+
+  const x4gConfig = await x4g.createConfig(
+    order.custom_name,
+    plan.gb,
+    plan.days,
+    plan.ip_limit
+  );
+
+
+  console.log("X4G CONFIG CREATED:", x4gConfig);
+
+
+  // ذخیره شناسه کانفیگ در سفارش
+  await db.setOrderConfig(
+    orderId,
+    x4gConfig.id || x4gConfig.uuid
+  );
+
+
+  await bot.telegram.sendMessage(
+    order.telegram_id,
+    `📦 سرویس شما آماده شد ✅\n\n` +
+    `نام سرویس: ${order.custom_name}\n\n` +
+    `🔗 کانفیگ:\n${x4gConfig.config || x4gConfig.url || "ساخته شد"}`
+  );
+
+
+} catch (err) {
+
+  console.log("CREATE X4G ERROR:", err);
+
+
+  await bot.telegram.sendMessage(
+    order.telegram_id,
+    "✅ پرداخت تایید شد ولی ساخت کانفیگ با خطا مواجه شد. لطفاً بعداً بررسی می‌شود."
+  );
+
+}
+
+
     // تغییر پیام ادمین
     try {
 
