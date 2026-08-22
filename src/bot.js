@@ -818,4 +818,67 @@ bot.action(/^reject:(\d+)$/, async (ctx) => {
 });
 
 
+
+// دریافت کانفیگ
+bot.action(/^copy:(\d+)$/, async (ctx) => {
+  try {
+    const order = await db.getOrder(Number(ctx.match[1]));
+
+    if (!order || order.telegram_id !== ctx.from.id) {
+      return ctx.answerCbQuery("این سرویس برای شما نیست.", {show_alert:true});
+    }
+
+    if (!order.x4g_uuid) {
+      return ctx.answerCbQuery("کانفیگ ساخته نشده.", {show_alert:true});
+    }
+
+    const data = await x4g.getConfigStatus(order.x4g_uuid);
+
+    const link =
+      data.vless_link ||
+      data.config ||
+      data.url ||
+      order.vless_link ||
+      "کانفیگ موجود نیست";
+
+    await ctx.reply(
+      "📋 کانفیگ سرویس:\n\n" + link
+    );
+
+    await ctx.answerCbQuery();
+
+  } catch(err) {
+    console.log("COPY ERROR", err);
+    await ctx.answerCbQuery("خطا در دریافت کانفیگ", {show_alert:true});
+  }
+});
+
+
+// وضعیت سرویس
+bot.action(/^status:(\d+)$/, async (ctx) => {
+  try {
+    const order = await db.getOrder(Number(ctx.match[1]));
+
+    if (!order || order.telegram_id !== ctx.from.id) {
+      return ctx.answerCbQuery("این سرویس برای شما نیست.", {show_alert:true});
+    }
+
+    const data = await x4g.getConfigStatus(order.x4g_uuid);
+
+    await ctx.reply(
+      `📊 وضعیت سرویس\n\n`+
+      `فعال: ${data.active ? "✅" : "❌"}\n`+
+      `مصرف: ${data.used_fmt || "0"}\n`+
+      `حجم: ${data.limit_fmt || "نامحدود"}\n`+
+      `روز باقی‌مانده: ${data.days_left ?? "-"}`
+    );
+
+    await ctx.answerCbQuery();
+
+  } catch(err) {
+    console.log("STATUS ERROR", err);
+    await ctx.answerCbQuery("خطا در وضعیت سرویس", {show_alert:true});
+  }
+});
+
 module.exports = bot;

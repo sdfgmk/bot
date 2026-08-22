@@ -92,17 +92,35 @@ async function allAdminIds() {
 async function listPlans(activeOnly = true) {
   const database = await connectDB();
 
-  return database.collection("plans")
+  const plans = await database.collection("plans")
     .find(activeOnly ? { active: 1 } : {})
     .sort({ id: 1 })
     .toArray();
+
+  return plans.map(p => ({
+    ...p,
+    gb: Number.isFinite(Number(p.gb)) ? Number(p.gb) : 0,
+    days: Number.isFinite(Number(p.days)) ? Number(p.days) : 0,
+    ip_limit: Number.isFinite(Number(p.ip_limit)) ? Number(p.ip_limit) : 0,
+    price: Number.isFinite(Number(p.price)) ? Number(p.price) : 0
+  }));
 }
 
 async function getPlan(id) {
   const database = await connectDB();
 
-  return database.collection("plans")
+  const plan = await database.collection("plans")
     .findOne({ id: Number(id) });
+
+  if (!plan) return null;
+
+  return {
+    ...plan,
+    gb: Number.isFinite(Number(plan.gb)) ? Number(plan.gb) : 0,
+    days: Number.isFinite(Number(plan.days)) ? Number(plan.days) : 0,
+    ip_limit: Number.isFinite(Number(plan.ip_limit)) ? Number(plan.ip_limit) : 0,
+    price: Number.isFinite(Number(plan.price)) ? Number(plan.price) : 0
+  };
 }
 
 async function addPlan(name, gb, days, ipLimit, price) {

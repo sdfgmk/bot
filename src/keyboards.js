@@ -16,7 +16,6 @@ function mainMenu() {
 }
 
 
-
 // ===============================
 // منوی ادمین
 // ===============================
@@ -36,20 +35,16 @@ function adminMenu() {
 }
 
 
-
 // ===============================
 // لیست پلن‌ها
 // ===============================
-function plansKeyboard(
-  plans,
-  prefix="plan"
-){
+function plansKeyboard(plans, prefix="plan") {
 
-  const rows = plans.map(plan=>{
+  const rows = plans.map(plan => {
 
     const text =
-      plan.price
-      ? `${plan.name} — ${plan.price.toLocaleString("fa-IR")} تومان`
+      plan.price && !isNaN(plan.price)
+      ? `${plan.name} — ${Number(plan.price).toLocaleString("fa-IR")} تومان`
       : plan.name;
 
 
@@ -68,7 +63,6 @@ function plansKeyboard(
 }
 
 
-
 // ===============================
 // لغو
 // ===============================
@@ -84,7 +78,6 @@ function cancelKeyboard(){
   ]);
 
 }
-
 
 
 // ===============================
@@ -109,13 +102,12 @@ function receiptReviewKeyboard(orderId){
 }
 
 
-
 // ===============================
-// لیست سرویس‌های کاربر
+// لیست سرویس‌ها
 // ===============================
 function ordersKeyboard(orders){
 
-  const rows = orders.map(order=>{
+  const rows = orders.map(order => {
 
     return [
       Markup.button.callback(
@@ -132,21 +124,19 @@ function ordersKeyboard(orders){
 }
 
 
-
 // ===============================
-// دکمه‌های داخل سرویس
+// عملیات سرویس
 // ===============================
 function orderActionsKeyboard(
   orderId,
-  uid,
-  configText=null
+  uid
 ){
 
-  const rows=[];
+  const rows = [];
 
 
+  // دریافت کانفیگ
 
-  // کپی کانفیگ
   rows.push([
     Markup.button.callback(
       "📋 دریافت کانفیگ",
@@ -156,7 +146,7 @@ function orderActionsKeyboard(
 
 
 
-  // وضعیت سرویس
+  // وضعیت
 
   if(config.PUBLIC_BASE_URL){
 
@@ -167,13 +157,12 @@ function orderActionsKeyboard(
       )
     ]);
 
-  }
-  else{
+  } else {
 
     rows.push([
       Markup.button.callback(
         "📊 وضعیت سرویس",
-        `status:${uid}`
+        `status:${orderId}`
       )
     ]);
 
@@ -191,14 +180,13 @@ function orderActionsKeyboard(
   ]);
 
 
-
   return Markup.inlineKeyboard(rows);
 
 }
 
 
 
-module.exports={
+module.exports = {
 
   mainMenu,
 
