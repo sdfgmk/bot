@@ -574,6 +574,7 @@ bot.command("pending", async(ctx)=>{
 // ═════════════════════════════════════════════════════
 
 bot.action(/^approve:(\d+)$/, async (ctx) => {
+
   try {
 
     const orderId = Number(ctx.match[1]);
@@ -586,45 +587,144 @@ bot.action(/^approve:(\d+)$/, async (ctx) => {
     if (!admin) {
       return ctx.answerCbQuery(
         "⛔ دسترسی ندارید",
-        { show_alert: true }
+        { show_alert:true }
       );
     }
 
 
     const order = await db.getOrder(orderId);
 
+
     if (!order) {
       return ctx.answerCbQuery(
         "سفارش پیدا نشد",
-        { show_alert: true }
+        {show_alert:true}
       );
     }
 
 
-    await db.approveOrder(orderId);
+
+    // گرفتن اطلاعات پلن
+    const plan = await db.getPlan(order.plan_id);
 
 
-// ساخت کانفیگ X4G
-try {
+    if (!plan) {
 
-  const plan = await db.getPlan(order.plan_id);
+      return ctx.answerCbQuery(
+        "پلن پیدا نشد",
+        {show_alert:true}
+      );
 
-  if (!plan) {
-    throw new Error("PLAN_NOT_FOUND");
+    }
+
+
+
+    // ساخت کانفیگ در X4G
+
+    const x4gConfig = await x4g.createConfig(
+
+      order.custom_name,
+
+      plan.gb,
+
+      plan.days,
+
+      plan.ip_limit
+
+    );
+
+
+    console.log(
+      "X4G CONFIG CREATED:",
+      x4gConfig
+    );
+
+
+
+    // ذخیره UUID و فعال کردن سفارش
+
+    await db.setOrderConfig(
+
+      orderId,
+
+      x4gConfig.uuid
+
+    );
+
+
+
+    // تغییر پیام ادمین
+
+    try {
+
+      await ctx.editMessageCaption(
+        `✅ تایید شد\n\n🧾 سفارش #${orderId}`
+      );
+
+    } catch {
+
+      try {
+
+        await ctx.editMessageText(
+          `✅ تایید شد\n\n🧾 سفارش #${orderId}`
+        );
+
+      } catch {}
+
+    }
+
+
+
+    // ارسال کانفیگ به مشتری
+
+    await bot.telegram.sendMessage(
+
+      order.telegram_id,
+
+      `✅ سفارش شما تایید شد.\n\n` +
+
+      `📦 سرویس: ${order.custom_name}\n\n` +
+
+      `🔗 کانفیگ شما:\n\n${
+
+        x4gConfig.vless_link ||
+
+        x4gConfig.config ||
+
+        x4gConfig.url ||
+
+        "کانفیگ ساخته شد"
+
+      }`
+
+    );
+
+
+
+    await ctx.answerCbQuery(
+      "تایید شد ✅"
+    );
+
+
+  } catch(err) {
+
+
+    console.log(
+      "APPROVE ERROR:",
+      err
+    );
+
+
+    await ctx.answerCbQuery(
+      "خطا در ساخت کانفیگ",
+      {
+        show_alert:true
+      }
+    );
+
   }
 
-
-  const x4gConfig = await x4g.createConfig(
-    order.custom_name,
-    plan.gb,
-    plan.days,
-    plan.ip_limit
-  );
-
-
-  console.log("X4G CONFIG CREATED:", x4gConfig);
-
-
+});
   // ذخیره شناسه کانفیگ در سفارش
   await db.setOrderConfig(
     orderId,

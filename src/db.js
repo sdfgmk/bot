@@ -352,10 +352,59 @@ async function getOrder(id){
 
 
 async function setOrderStatus(
- orderId,
- status,
- uuid=null
+  orderId,
+  status,
+  uuid = null
 ){
+
+  const database = await connectDB();
+
+  let data = {
+    status
+  };
+
+  if(uuid){
+    data.x4g_uuid = uuid;
+  }
+
+  if(status === "active"){
+    data.approved_at = new Date().toISOString();
+  }
+
+  await database.collection("orders")
+  .updateOne(
+    {
+      id:Number(orderId)
+    },
+    {
+      $set:data
+    }
+  );
+
+}
+
+
+// این بیرون از setOrderStatus باشد
+
+async function setOrderConfig(orderId, uuid){
+
+  const database = await connectDB();
+
+  await database.collection("orders")
+  .updateOne(
+    {
+      id:Number(orderId)
+    },
+    {
+      $set:{
+        x4g_uuid: uuid,
+        status:"active",
+        approved_at:new Date().toISOString()
+      }
+    }
+  );
+
+}
 
  const database = await connectDB();
 
@@ -542,12 +591,12 @@ attachReceipt,
 getOrder,
 
 setOrderStatus,
+setOrderConfig,
+
 approveOrder,
 rejectOrder,
 
 listUserActiveOrders,
-listPendingOrders,
-
-setOrderConfig
+listPendingOrders
 
 };
