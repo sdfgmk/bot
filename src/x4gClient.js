@@ -6,7 +6,7 @@ const client = axios.create({
 
   baseURL: config.X4G_BASE_URL,
 
-  timeout:20000,
+  timeout: 20000,
 
   headers:{
     "X-API-Key": config.X4G_BOT_API_KEY,
@@ -17,141 +17,124 @@ const client = axios.create({
 
 
 
-// =========================
 // ساخت کانفیگ
-// =========================
 
 async function createConfig(
- label,
- gb,
- days,
- ipLimit
+  label,
+  gb,
+  days,
+  ipLimit
 ){
 
- try{
+  try{
 
-  const {data}=await client.post(
-   "/api/bot/configs",
-   {
-    label,
+    const {data}=await client.post(
+      "/api/bot/configs",
+      {
+        label:String(label),
+        gb:Number(gb),
+        days:Number(days),
+        ip_limit:Number(ipLimit)
+      }
+    );
+
+
+    console.log(
+      "X4G CONFIG:",
+      data
+    );
+
+
+    return data;
+
+
+  }catch(err){
+
+    console.log(
+      "CREATE CONFIG ERROR:",
+      err.response?.data || err.message
+    );
+
+    throw err;
+
+  }
+
+}
+
+
+
+// گرفتن وضعیت
+
+async function getConfigStatus(uuid){
+
+  try{
+
+    const {data}=await client.get(
+      `/api/bot/configs/${uuid}`
+    );
+
+
+    return data;
+
+
+  }catch(err){
+
+    console.log(
+      "STATUS ERROR:",
+      err.response?.data || err.message
+    );
+
+    throw err;
+
+  }
+
+}
+
+
+
+// تمدید
+
+async function renewConfig(
+ uuid,
+ gb,
+ days
+){
+
+ const {data}=await client.post(
+
+  `/api/bot/configs/${uuid}/renew`,
+
+  {
     gb:Number(gb),
     days:Number(days),
-    ip_limit:Number(ipLimit)
-   }
-  );
+    reset_usage:true
+  }
 
-  console.log(
-   "X4G CONFIG:",
-   data
-  );
+ );
 
-  return data;
-
-
- }catch(err){
-
-  console.log(
-   "CREATE CONFIG ERROR:",
-   err.response?.data || err.message
-  );
-
-  throw err;
-
- }
+ return data;
 
 }
 
 
 
-// =========================
-// ساخت گروه ساب
-// =========================
+// خاموش کردن
 
-async function createSub(name){
+async function disableConfig(uuid){
 
- try{
+ const {data}=await client.post(
 
-  const {data}=await client.post(
-   "/api/subs",
-   {
-    name
-   }
-  );
+  `/api/bot/configs/${uuid}/disable`
 
+ );
 
-  console.log(
-   "X4G SUB:",
-   data
-  );
-
-
-  return data;
-
-
- }catch(err){
-
-  console.log(
-   "CREATE SUB ERROR:",
-   err.response?.data || err.message
-  );
-
-  throw err;
-
- }
+ return data;
 
 }
 
 
 
-// =========================
-// اتصال کانفیگ به ساب
-// =========================
-
-async function addConfigToSub(
- subId,
- uuid
-){
-
- try{
-
-  const {data}=await client.post(
-
-   `/api/subs/${subId}/links`,
-
-   {
-    uuid
-   }
-
-  );
-
-
-  console.log(
-   "SUB LINK RESULT:",
-   data
-  );
-
-
-  return data;
-
-
- }catch(err){
-
-  console.log(
-   "ADD SUB LINK ERROR:",
-   err.response?.data || err.message
-  );
-
-  throw err;
-
- }
-
-}
-
-
-
-// =========================
-// ساخت کامل سرویس
-// =========================
+// ساخت سرویس کامل
 
 async function createFullService(
  name,
@@ -168,92 +151,18 @@ async function createFullService(
  );
 
 
- const sub = await createSub(
-  name
- );
-
-
- await addConfigToSub(
-  sub.id || sub.sub_id,
-  cfg.uuid
- );
-
-
  return {
 
-  ...cfg,
+   uuid: cfg.uuid,
 
-  sub_id:
-   sub.id || sub.sub_id,
+   vless_link:
+    cfg.vless_link || null,
 
 
-  sub_url:
-   sub.url ||
-   sub.public_url ||
-   (
-    sub.key
-     ? `${config.X4G_BASE_URL}/p/${sub.key}`
-     : null
-   )
+   sub_url:
+    cfg.sub_url || null
 
  };
-
-}
-
-
-
-// =========================
-// وضعیت
-// =========================
-
-async function getConfigStatus(uid){
-
- const {data}=await client.get(
-  `/api/bot/configs/${uid}`
- );
-
- return data;
-
-}
-
-
-
-// =========================
-// تمدید
-// =========================
-
-async function renewConfig(
- uid,
- gb,
- days
-){
-
- const {data}=await client.post(
-  `/api/bot/configs/${uid}/renew`,
-  {
-   gb:Number(gb),
-   days:Number(days),
-   reset_usage:true
-  }
- );
-
- return data;
-
-}
-
-
-
-// =========================
-// خاموش
-// =========================
-
-async function disableConfig(uid){
-
- const {data}=await client.post(
-  `/api/bot/configs/${uid}/disable`
- );
-
- return data;
 
 }
 
@@ -262,10 +171,6 @@ async function disableConfig(uid){
 module.exports={
 
  createConfig,
-
- createSub,
-
- addConfigToSub,
 
  createFullService,
 
