@@ -428,6 +428,26 @@ async function listPendingOrders(){
 }
 
 
+// تایید سفارش
+async function approveOrder(orderId){
+
+  return setOrderStatus(
+    orderId,
+    "active"
+  );
+
+}
+
+
+// رد سفارش
+async function rejectOrder(orderId){
+
+  return setOrderStatus(
+    orderId,
+    "rejected"
+  );
+
+}
 
 // ساخت اولیه
 
@@ -485,37 +505,29 @@ async function seed(){
 module.exports={
 
 connectDB,
-
 seed,
 
 ensureUser,
 
 isAdmin,
-
 addAdmin,
-
 allAdminIds,
 
 listPlans,
-
 getPlan,
-
 addPlan,
-
 hardDeletePlan,
-
 togglePlan,
 
 createOrder,
-
 attachReceipt,
-
 getOrder,
 
 setOrderStatus,
+approveOrder,
+rejectOrder,
 
 listUserActiveOrders,
-
 listPendingOrders
 
 };

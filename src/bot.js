@@ -569,4 +569,198 @@ bot.command("pending", async(ctx)=>{
 
 });
 
-module.exports = bot;
+// ═════════════════════════════════════════════════════
+// تایید رسید سفارش
+// ═════════════════════════════════════════════════════
+
+bot.action(/^approve:(\d+)$/, async (ctx) => {
+  try {
+
+    const orderId = Number(ctx.match[1]);
+
+    console.log("APPROVE CLICK:", orderId);
+
+
+    const admin = await db.isAdmin(ctx.from.id);
+
+    if (!admin) {
+      return ctx.answerCbQuery(
+        "⛔ دسترسی ندارید",
+        { show_alert: true }
+      );
+    }
+
+
+    const order = await db.getOrder(orderId);
+
+    if (!order) {
+      return ctx.answerCbQuery(
+        "سفارش پیدا نشد",
+        { show_alert: true }
+      );
+    }
+
+
+    await db.approveOrder(orderId);
+
+
+    // تغییر پیام ادمین
+    try {
+
+      await ctx.editMessageCaption(
+        `✅ تایید شد\n\n🧾 سفارش #${orderId}`
+      );
+
+    } catch {
+
+      try {
+
+        await ctx.editMessageText(
+          `✅ تایید شد\n\n🧾 سفارش #${orderId}`
+        );
+
+      } catch {}
+
+    }
+
+
+
+    // اطلاع به کاربر
+
+    await bot.telegram.sendMessage(
+      order.telegram_id,
+      `✅ سفارش شما تایید شد.\n\n🧾 شماره سفارش: ${orderId}`
+    );
+
+
+    await ctx.answerCbQuery(
+      "تایید شد ✅"
+    );
+
+
+  } catch (err) {
+
+    console.log(
+      "APPROVE ERROR:",
+      err
+    );
+
+    await ctx.answerCbQuery(
+      "خطا در تایید سفارش",
+      {
+        show_alert:true
+      }
+    );
+
+  }
+});
+
+
+
+
+
+// ═════════════════════════════════════════════════════
+// رد رسید سفارش
+// ═════════════════════════════════════════════════════
+
+bot.action(/^reject:(\d+)$/, async (ctx) => {
+
+  try {
+
+    const orderId = Number(ctx.match[1]);
+
+    console.log("REJECT CLICK:", orderId);
+
+
+
+    const admin = await db.isAdmin(ctx.from.id);
+
+
+    if (!admin) {
+
+      return ctx.answerCbQuery(
+        "⛔ دسترسی ندارید",
+        {
+          show_alert:true
+        }
+      );
+
+    }
+
+
+
+    const order = await db.getOrder(orderId);
+
+
+    if (!order) {
+
+      return ctx.answerCbQuery(
+        "سفارش پیدا نشد",
+        {
+          show_alert:true
+        }
+      );
+
+    }
+
+
+
+    await db.rejectOrder(orderId);
+
+
+
+    try {
+
+      await ctx.editMessageCaption(
+        `❌ رد شد\n\n🧾 سفارش #${orderId}`
+      );
+
+    } catch {
+
+
+      try {
+
+        await ctx.editMessageText(
+          `❌ رد شد\n\n🧾 سفارش #${orderId}`
+        );
+
+      } catch {}
+
+    }
+
+
+
+
+    await bot.telegram.sendMessage(
+      order.telegram_id,
+      `❌ رسید شما رد شد.\n\n🧾 شماره سفارش: ${orderId}`
+    );
+
+
+
+    await ctx.answerCbQuery(
+      "رد شد ❌"
+    );
+
+
+
+  } catch(err) {
+
+
+    console.log(
+      "REJECT ERROR:",
+      err
+    );
+
+
+    await ctx.answerCbQuery(
+      "خطا در رد سفارش",
+      {
+        show_alert:true
+      }
+    );
+
+
+  }
+
+});
