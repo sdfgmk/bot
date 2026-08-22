@@ -764,3 +764,6 @@ bot.action(/^reject:(\d+)$/, async (ctx) => {
   }
 
 });
+
+
+module.exports = bot;
