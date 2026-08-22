@@ -2,38 +2,61 @@ const { Markup } = require("telegraf");
 const config = require("./config");
 
 
+// ===============================
 // منوی اصلی کاربر
+// ===============================
 function mainMenu() {
+
   return Markup.keyboard([
     ["🛒 خرید سرویس جدید"],
     ["📦 سرویس‌های من"]
-  ]).resize();
+  ])
+  .resize();
+
 }
 
 
+
+// ===============================
 // منوی ادمین
+// ===============================
 function adminMenu() {
+
   return Markup.keyboard([
-    ["🛒 خرید سرویس جدید", "📦 سرویس‌های من"],
-    ["🛠 پنل ادمین"]
-  ]).resize();
+    [
+      "🛒 خرید سرویس جدید",
+      "📦 سرویس‌های من"
+    ],
+    [
+      "🛠 پنل ادمین"
+    ]
+  ])
+  .resize();
+
 }
 
 
+
+// ===============================
 // لیست پلن‌ها
-function plansKeyboard(plans, prefix = "plan") {
+// ===============================
+function plansKeyboard(
+  plans,
+  prefix="plan"
+){
 
-  const rows = plans.map((p) => {
+  const rows = plans.map(plan=>{
 
-    const text = p.price
-      ? `${p.name} — ${p.price.toLocaleString("fa-IR")} تومان`
-      : p.name;
+    const text =
+      plan.price
+      ? `${plan.name} — ${plan.price.toLocaleString("fa-IR")} تومان`
+      : plan.name;
 
 
     return [
       Markup.button.callback(
         text,
-        `${prefix}:${p.id}`
+        `${prefix}:${plan.id}`
       )
     ];
 
@@ -41,12 +64,15 @@ function plansKeyboard(plans, prefix = "plan") {
 
 
   return Markup.inlineKeyboard(rows);
+
 }
 
 
 
-// دکمه انصراف
-function cancelKeyboard() {
+// ===============================
+// لغو
+// ===============================
+function cancelKeyboard(){
 
   return Markup.inlineKeyboard([
     [
@@ -61,8 +87,10 @@ function cancelKeyboard() {
 
 
 
-// بررسی رسید توسط ادمین
-function receiptReviewKeyboard(orderId) {
+// ===============================
+// تایید رسید ادمین
+// ===============================
+function receiptReviewKeyboard(orderId){
 
   return Markup.inlineKeyboard([
     [
@@ -82,17 +110,21 @@ function receiptReviewKeyboard(orderId) {
 
 
 
-// لیست سرویس‌ها
-function ordersKeyboard(orders) {
+// ===============================
+// لیست سرویس‌های کاربر
+// ===============================
+function ordersKeyboard(orders){
 
-  const rows = orders.map((o)=>[
+  const rows = orders.map(order=>{
 
-    Markup.button.callback(
-      `📄 ${o.custom_name || `سرویس #${o.id}`}`,
-      `order:${o.id}`
-    )
+    return [
+      Markup.button.callback(
+        `📄 ${order.custom_name || `سرویس #${order.id}`}`,
+        `order:${order.id}`
+      )
+    ];
 
-  ]);
+  });
 
 
   return Markup.inlineKeyboard(rows);
@@ -101,59 +133,48 @@ function ordersKeyboard(orders) {
 
 
 
-
-// عملیات روی سرویس
+// ===============================
+// دکمه‌های داخل سرویس
+// ===============================
 function orderActionsKeyboard(
   orderId,
   uid,
-  configText
+  configText=null
 ){
 
-  const rows = [];
+  const rows=[];
+
 
 
   // کپی کانفیگ
-  if(configText){
-
-    rows.push([
-
-      Markup.button.switchToCurrentChat(
-        "📋 کپی کانفیگ",
-        configText
-      )
-
-    ]);
-
-  }
+  rows.push([
+    Markup.button.callback(
+      "📋 دریافت کانفیگ",
+      `copy:${orderId}`
+    )
+  ]);
 
 
 
   // وضعیت سرویس
+
   if(config.PUBLIC_BASE_URL){
 
-    const webAppUrl =
-      `${config.PUBLIC_BASE_URL}/status?uid=${uid}`;
-
-
     rows.push([
-
       Markup.button.webApp(
         "📊 وضعیت سرویس",
-        webAppUrl
+        `${config.PUBLIC_BASE_URL}/status?uid=${uid}`
       )
-
     ]);
 
-  } else {
-
+  }
+  else{
 
     rows.push([
-
       Markup.button.callback(
         "📊 وضعیت سرویس",
         `status:${uid}`
       )
-
     ]);
 
   }
@@ -161,13 +182,12 @@ function orderActionsKeyboard(
 
 
   // تمدید
-  rows.push([
 
+  rows.push([
     Markup.button.callback(
       "🔄 تمدید این سرویس",
       `renew:${orderId}`
     )
-
   ]);
 
 
@@ -178,7 +198,7 @@ function orderActionsKeyboard(
 
 
 
-module.exports = {
+module.exports={
 
   mainMenu,
 

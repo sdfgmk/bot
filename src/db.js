@@ -41,7 +41,6 @@ async function connectDB() {
   return db;
 }
 
-
 async function ensureUser(telegramId, username, fullName) {
   const database = await connectDB();
 
@@ -60,14 +59,11 @@ async function ensureUser(telegramId, username, fullName) {
   );
 }
 
-
 async function isAdmin(id) {
   const database = await connectDB();
-
   return !!await database.collection("admins")
     .findOne({ telegram_id: id });
 }
-
 
 async function addAdmin(id) {
   const database = await connectDB();
@@ -83,7 +79,6 @@ async function addAdmin(id) {
   );
 }
 
-
 async function allAdminIds() {
   const database = await connectDB();
 
@@ -94,7 +89,6 @@ async function allAdminIds() {
   return list.map(x => x.telegram_id);
 }
 
-
 async function listPlans(activeOnly = true) {
   const database = await connectDB();
 
@@ -104,14 +98,12 @@ async function listPlans(activeOnly = true) {
     .toArray();
 }
 
-
 async function getPlan(id) {
   const database = await connectDB();
 
   return database.collection("plans")
     .findOne({ id: Number(id) });
 }
-
 
 async function addPlan(name, gb, days, ipLimit, price) {
   const database = await connectDB();
@@ -137,14 +129,12 @@ async function addPlan(name, gb, days, ipLimit, price) {
   return id;
 }
 
-
 async function hardDeletePlan(id) {
   const database = await connectDB();
 
   await database.collection("plans")
     .deleteOne({ id: Number(id) });
 }
-
 
 async function togglePlan(id) {
   const database = await connectDB();
@@ -163,7 +153,6 @@ async function togglePlan(id) {
     }
   );
 }
-
 
 async function createOrder(
   telegramId,
@@ -191,6 +180,7 @@ async function createOrder(
     is_renewal: isRenewal ? 1 : 0,
     renew_of_order_id: renewOfOrderId,
     x4g_uuid: null,
+    vless_link: null,
     receipt_file_id: null,
     receipt_text: null,
     created_at: new Date().toISOString(),
@@ -199,7 +189,6 @@ async function createOrder(
 
   return id;
 }
-
 
 async function attachReceipt(orderId, fileId, text) {
   const database = await connectDB();
@@ -216,14 +205,12 @@ async function attachReceipt(orderId, fileId, text) {
   );
 }
 
-
 async function getOrder(id) {
   const database = await connectDB();
 
   return database.collection("orders")
     .findOne({ id: Number(id) });
 }
-
 
 async function setOrderStatus(orderId, status, uuid = null) {
   const database = await connectDB();
@@ -242,8 +229,7 @@ async function setOrderStatus(orderId, status, uuid = null) {
   );
 }
 
-
-async function setOrderConfig(orderId, uuid) {
+async function setOrderConfig(orderId, uuid, vlessLink = null) {
   const database = await connectDB();
 
   await database.collection("orders").updateOne(
@@ -251,13 +237,13 @@ async function setOrderConfig(orderId, uuid) {
     {
       $set: {
         x4g_uuid: uuid,
+        vless_link: vlessLink,
         status: "active",
         approved_at: new Date().toISOString()
       }
     }
   );
 }
-
 
 async function listUserActiveOrders(id) {
   const database = await connectDB();
@@ -271,7 +257,6 @@ async function listUserActiveOrders(id) {
     .toArray();
 }
 
-
 async function listPendingOrders() {
   const database = await connectDB();
 
@@ -281,16 +266,13 @@ async function listPendingOrders() {
     .toArray();
 }
 
-
 async function approveOrder(orderId) {
   return setOrderStatus(orderId, "active");
 }
 
-
 async function rejectOrder(orderId) {
   return setOrderStatus(orderId, "rejected");
 }
-
 
 async function seed() {
   const database = await connectDB();
@@ -312,7 +294,6 @@ async function seed() {
     await addPlan("نقره‌ای", 50, 30, 1, 90000);
   }
 }
-
 
 module.exports = {
   connectDB,

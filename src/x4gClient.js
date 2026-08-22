@@ -1,37 +1,194 @@
 const axios = require("axios");
 const config = require("./config");
 
+
+// اتصال به API پنل X4G
+
 const client = axios.create({
+
   baseURL: config.X4G_BASE_URL,
+
   timeout: 20000,
+
   headers: {
+
     "X-API-Key": config.X4G_BOT_API_KEY,
-    "Content-Type": "application/json",
-  },
+
+    "Content-Type": "application/json"
+
+  }
+
 });
 
-async function createConfig(label, gb, days, ipLimit) {
-  const { data } = await client.post("/api/bot/configs", { label, gb, days, ip_limit: ipLimit });
-  return data;
+
+
+
+// ساخت کانفیگ جدید
+
+async function createConfig(
+  label,
+  gb,
+  days,
+  ipLimit
+){
+
+  try {
+
+    const { data } = await client.post(
+      "/api/bot/configs",
+      {
+        label,
+        gb: Number(gb),
+        days: Number(days),
+        ip_limit: Number(ipLimit)
+      }
+    );
+
+
+    return data;
+
+
+  } catch(err){
+
+    console.log(
+      "X4G CREATE ERROR:",
+      err.response?.data || err.message
+    );
+
+    throw err;
+
+  }
+
 }
 
-async function getConfigStatus(uid) {
-  const { data } = await client.get(`/api/bot/configs/${uid}`);
-  return data;
+
+
+
+
+// دریافت وضعیت سرویس
+
+async function getConfigStatus(uid){
+
+  try {
+
+
+    const { data } = await client.get(
+      `/api/bot/configs/${uid}`
+    );
+
+
+    return data;
+
+
+  } catch(err){
+
+
+    console.log(
+      "X4G STATUS ERROR:",
+      err.response?.data || err.message
+    );
+
+
+    throw err;
+
+  }
+
 }
 
-async function renewConfig(uid, gb, days, resetUsage = true) {
-  const { data } = await client.post(`/api/bot/configs/${uid}/renew`, {
-    gb,
-    days,
-    reset_usage: resetUsage,
-  });
-  return data;
+
+
+
+
+// تمدید سرویس
+
+async function renewConfig(
+  uid,
+  gb,
+  days,
+  resetUsage = true
+){
+
+  try {
+
+
+    const { data } = await client.post(
+      `/api/bot/configs/${uid}/renew`,
+      {
+
+        gb: Number(gb),
+
+        days: Number(days),
+
+        reset_usage: resetUsage
+
+      }
+    );
+
+
+    return data;
+
+
+  } catch(err){
+
+
+    console.log(
+      "X4G RENEW ERROR:",
+      err.response?.data || err.message
+    );
+
+
+    throw err;
+
+  }
+
 }
 
-async function disableConfig(uid) {
-  const { data } = await client.post(`/api/bot/configs/${uid}/disable`);
-  return data;
+
+
+
+
+// خاموش کردن سرویس
+
+async function disableConfig(uid){
+
+  try {
+
+
+    const { data } = await client.post(
+      `/api/bot/configs/${uid}/disable`
+    );
+
+
+    return data;
+
+
+  } catch(err){
+
+
+    console.log(
+      "X4G DISABLE ERROR:",
+      err.response?.data || err.message
+    );
+
+
+    throw err;
+
+  }
+
 }
 
-module.exports = { createConfig, getConfigStatus, renewConfig, disableConfig };
+
+
+
+
+module.exports = {
+
+  createConfig,
+
+  getConfigStatus,
+
+  renewConfig,
+
+  disableConfig
+
+};
