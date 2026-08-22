@@ -568,3 +568,5 @@ bot.command("pending", async(ctx)=>{
  }
 
 });
+
+module.exports = bot;

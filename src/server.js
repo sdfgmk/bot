@@ -31,7 +31,7 @@ async function main() {
     throw new Error("BOT_TOKEN تنظیم نشده. توی Environment Variables مقداردهیش کن.");
   }
   await bot.telegram.deleteWebhook({ drop_pending_updates: true });
-  bot.launch();
+  await bot.launch();
   console.log("Bot polling started");
 
   app.listen(config.PORT, "0.0.0.0", () => {
