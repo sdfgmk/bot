@@ -587,7 +587,9 @@ bot.action(/^approve:(\d+)$/, async (ctx) => {
     if (!admin) {
       return ctx.answerCbQuery(
         "⛔ دسترسی ندارید",
-        { show_alert:true }
+        {
+          show_alert:true
+        }
       );
     }
 
@@ -598,39 +600,35 @@ bot.action(/^approve:(\d+)$/, async (ctx) => {
     if (!order) {
       return ctx.answerCbQuery(
         "سفارش پیدا نشد",
-        {show_alert:true}
+        {
+          show_alert:true
+        }
       );
     }
 
 
 
-    // گرفتن اطلاعات پلن
     const plan = await db.getPlan(order.plan_id);
 
 
     if (!plan) {
-
       return ctx.answerCbQuery(
         "پلن پیدا نشد",
-        {show_alert:true}
+        {
+          show_alert:true
+        }
       );
-
     }
 
 
 
-    // ساخت کانفیگ در X4G
+    // ساخت کانفیگ X4G
 
     const x4gConfig = await x4g.createConfig(
-
       order.custom_name,
-
       plan.gb,
-
       plan.days,
-
       plan.ip_limit
-
     );
 
 
@@ -644,11 +642,25 @@ bot.action(/^approve:(\d+)$/, async (ctx) => {
     // ذخیره UUID و فعال کردن سفارش
 
     await db.setOrderConfig(
-
       orderId,
-
       x4gConfig.uuid
+    );
 
+
+
+    // ارسال کانفیگ برای مشتری
+
+    await bot.telegram.sendMessage(
+      order.telegram_id,
+      `✅ سفارش شما تایید شد.\n\n` +
+      `📦 سرویس: ${order.custom_name}\n\n` +
+      `🔗 کانفیگ شما:\n\n` +
+      `${
+        x4gConfig.vless_link ||
+        x4gConfig.config ||
+        x4gConfig.url ||
+        "کانفیگ ساخته شد"
+      }`
     );
 
 
@@ -672,32 +684,6 @@ bot.action(/^approve:(\d+)$/, async (ctx) => {
       } catch {}
 
     }
-
-
-
-    // ارسال کانفیگ به مشتری
-
-    await bot.telegram.sendMessage(
-
-      order.telegram_id,
-
-      `✅ سفارش شما تایید شد.\n\n` +
-
-      `📦 سرویس: ${order.custom_name}\n\n` +
-
-      `🔗 کانفیگ شما:\n\n${
-
-        x4gConfig.vless_link ||
-
-        x4gConfig.config ||
-
-        x4gConfig.url ||
-
-        "کانفیگ ساخته شد"
-
-      }`
-
-    );
 
 
 
@@ -716,85 +702,6 @@ bot.action(/^approve:(\d+)$/, async (ctx) => {
 
 
     await ctx.answerCbQuery(
-      "خطا در ساخت کانفیگ",
-      {
-        show_alert:true
-      }
-    );
-
-  }
-
-});
-  // ذخیره شناسه کانفیگ در سفارش
-  await db.setOrderConfig(
-    orderId,
-    x4gConfig.id || x4gConfig.uuid
-  );
-
-
-  await bot.telegram.sendMessage(
-    order.telegram_id,
-    `📦 سرویس شما آماده شد ✅\n\n` +
-    `نام سرویس: ${order.custom_name}\n\n` +
-    `🔗 کانفیگ:\n${x4gConfig.config || x4gConfig.url || "ساخته شد"}`
-  );
-
-
-} catch (err) {
-
-  console.log("CREATE X4G ERROR:", err);
-
-
-  await bot.telegram.sendMessage(
-    order.telegram_id,
-    "✅ پرداخت تایید شد ولی ساخت کانفیگ با خطا مواجه شد. لطفاً بعداً بررسی می‌شود."
-  );
-
-}
-
-
-    // تغییر پیام ادمین
-    try {
-
-      await ctx.editMessageCaption(
-        `✅ تایید شد\n\n🧾 سفارش #${orderId}`
-      );
-
-    } catch {
-
-      try {
-
-        await ctx.editMessageText(
-          `✅ تایید شد\n\n🧾 سفارش #${orderId}`
-        );
-
-      } catch {}
-
-    }
-
-
-
-    // اطلاع به کاربر
-
-    await bot.telegram.sendMessage(
-      order.telegram_id,
-      `✅ سفارش شما تایید شد.\n\n🧾 شماره سفارش: ${orderId}`
-    );
-
-
-    await ctx.answerCbQuery(
-      "تایید شد ✅"
-    );
-
-
-  } catch (err) {
-
-    console.log(
-      "APPROVE ERROR:",
-      err
-    );
-
-    await ctx.answerCbQuery(
       "خطا در تایید سفارش",
       {
         show_alert:true
@@ -802,12 +709,8 @@ bot.action(/^approve:(\d+)$/, async (ctx) => {
     );
 
   }
+
 });
-
-
-
-
-
 // ═════════════════════════════════════════════════════
 // رد رسید سفارش
 // ═════════════════════════════════════════════════════
